@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/API-24%20%286.1.1%29-34D399?style=flat-square" alt="API">
   <img src="https://img.shields.io/badge/ABI-arm64--v8a-34D399?style=flat-square" alt="ABI">
   <img src="https://img.shields.io/badge/Version-1.0.1-34D399?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Signature-Unsigned-f59e0b?style=flat-square" alt="Signature">
   <img src="https://img.shields.io/badge/Source-Closed-1f2937?style=flat-square" alt="Source">
 </p>
 
@@ -21,35 +22,71 @@
 
 ## ⬇️ 下载安装
 
-> **本仓库不包含源代码，仅发布可安装的应用程序包（.hap）。**
+> **本仓库不包含源代码，且发布的是「未签名」安装包 —— 必须用自己的开发者证书重签后才能安装。**
+> 未签名包无法 `hdc install` 直装，这是正常现象，不是包损坏。
 
-| 版本 | 安装包 | 大小 | 平台要求 | 下载 |
+| 版本 | 安装包 | 大小 | 签名状态 | 下载 |
 | :--- | :--- | :--- | :--- | :--- |
-| **v1.0.1** ⭐ 最新 | `blueberry-theater-1.0.1.hap` | 40.4 MB | HarmonyOS NEXT 6.1.1 (API 24) / arm64 | [前往 Releases 下载](https://github.com/docomola/blueberry-theater/releases/latest) |
-| v1.0.0 | `blueberry-theater-1.0.0.hap` | 38.4 MB | HarmonyOS NEXT 6.1.1 (API 24) / arm64 | [历史版本](https://github.com/docomola/blueberry-theater/releases/tag/v1.0.0) |
+| **v1.0.1** ⭐ 最新 | `blueberry-theater-1.0.1-unsigned.hap` | 38.1 MB | **未签名** | [前往 Releases 下载](https://github.com/docomola/blueberry-theater/releases/latest) |
+| v1.0.0 | — | — | 已下架 | 见下方说明 |
 
-> ⚠️ **v1.0.0 的鸿果源在当前服务端环境下大概率取不到播放地址**（服务端自 2026-11-20 起变更了取址协议行为）。强烈建议直接安装 v1.0.1。
+> ℹ️ **v1.0.0 的签名安装包已下架**：它使用调试证书签署，只对作者本机调试设备有效，其他设备一律报 `9568289` / `9568320`。同时 v1.0.0 的鸿果源在 2026-11-20 后的服务端环境下大概率取不到播放地址，不建议再使用。
 
-### 安装方式 A：hdc 命令行（推荐）
+---
+
+### 安装流程总览
+
+未签名包需要三步：**准备签名材料 → 重签 → 安装**。
+
+#### 第一步：准备签名材料
+
+需要三样东西：密钥库 `*.p12`、证书 `*.cer`、Profile `*.p7b`。
+
+**路径 A：DevEco Studio 自动签名（最简单）**
+
+1. 用 DevEco Studio 新建一个空工程（Empty Ability 即可）
+2. 把该工程 `AppScope/app.json5` 里的 `bundleName` 改成 **`com.example.articlehub`**
+3. 登录华为开发者账号 → `File → Project Structure → Signing Configs` → 勾选 **Automatically generate signature**
+4. 等待生成完成后，工程下 `.ohos/config/` 目录里就有 `default_*.p12`、`default_*.cer`、`default_*.p7b`
+
+> ⚠️ `bundleName` 必须是 `com.example.articlehub`，Profile 里的 `bundle-name` 与之不匹配会导致安装校验失败。
+
+**路径 B：华为开发者联盟手动申请**
+
+在 AppGallery Connect 创建应用（包名同样填 `com.example.articlehub`），申请**调试证书 + 调试 Profile**（或发布证书 + 发布 Profile），并在 Profile 里加入目标设备的 UDID。
+
+#### 第二步：重签
+
+用 HarmonyOS SDK 自带的 `hap-sign-tool.jar`（位于 `<SDK>/default/openharmony/toolchains/lib/`）：
+
+```bash
+java -jar hap-sign-tool.jar sign-app \
+  -mode "localSign" \
+  -keyAlias "你的密钥别名" \
+  -keyPwd "密钥口令" \
+  -keystorePwd "密钥库口令" \
+  -keystoreFile "default_xxx.p12" \
+  -appCertFile "default_xxx.cer" \
+  -profileFile "default_xxx.p7b" \
+  -inFile "blueberry-theater-1.0.1-unsigned.hap" \
+  -outFile "blueberry-theater-1.0.1-signed.hap" \
+  -signAlg "SHA256withECDSA"
+```
+
+成功后会得到 `blueberry-theater-1.0.1-signed.hap`。
+
+#### 第三步：安装
 
 ```bash
 # 1. 手机进入「设置 → 关于本机」连点版本号开启开发者模式
 # 2. 打开「开发者选项 → USB 调试」，连接电脑并在手机上允许调试
-hdc list targets                      # 确认设备已识别
-hdc install -r blueberry-theater-1.0.1.hap
+hdc list targets
+hdc install -r blueberry-theater-1.0.1-signed.hap
 ```
 
-安装完成后桌面出现「蓝莓剧场」图标，首次启动需允许网络访问。
+无线调试：先 `hdc tconn <手机IP>:<端口>`（端口见「无线调试」页面），再执行上面的 install。
 
-### 安装方式 B：DevEco Studio
-
-连接真机后，在 **Device Manager / 运行配置** 中直接把 `.hap` 拖入设备，或用「Install HAP」菜单选择文件安装。
-
-### 安装方式 C：无线调试
-
-同一局域网下执行 `hdc tconn <手机IP>:<端口>`（端口在「无线调试」页面查看），再执行方式 A 的 `hdc install` 命令。
-
-> ⚠️ **签名说明**：当前安装包使用**调试签名（debug 证书）**，属于开发测试分发。若你的设备不在调试设备列表中，安装可能报签名校验失败（错误码 `9568289` / `9568320`），此时需要自行重新签名后安装。正式商店分发版本请关注后续 Release。
+> ⚠️ **如果之前装过别的签名版本**（包括作者签发的旧调试包），签名不一致会报 `9568289`。先 `hdc uninstall com.example.articlehub` 再装。卸载会清除收藏与播放记录。
 
 ---
 
@@ -97,6 +134,7 @@ hdc install -r blueberry-theater-1.0.1.hap
 
 **取流稳定性修复 + 播放与刷剧页体验重做。**
 
+- **分发方式变更**：安装包改为**未签名**（`-unsigned.hap`），需自行用开发者证书重签后安装；同时移除 v1.0.0 的调试签名包（只对作者本机设备有效）
 - **取流**：新增 `video_tab` 回退通道，解决服务端自 2026-11-20 起对匿名设备返回「HTTP 200 + 空正文」导致的无法播放；失败分类修正为「网络异常不换设备，仅空正文换身份」
 - **播放页**：默认无 UI 播放，起播 2.6 秒自动隐藏控制层；单击暂停 / 续播，双击全屏；控制行加入上一集、下一集、倍速、横竖屏；方向三态（自动 / 强制横屏 / 强制竖屏）；横屏画面精确居中
 - **刷剧页**：视频区满宽 16:9 并与顶栏留安全距；右侧动作栏改为收藏 / 剧集 / 清屏，清屏一键隐去全部遮挡 UI；暂停浮层加入上一集 / 下一集 / 倍速 / 横竖屏；移除热度信息，集数标签显示「全 N 集 · 第 M 集」
@@ -129,6 +167,6 @@ hdc install -r blueberry-theater-1.0.1.hap
 
 ## 🔒 关于源代码
 
-本仓库**仅发布编译后的安装包与说明文档**，不提供源代码、构建脚本或签名材料。技术交流与问题反馈请通过 [Issues](https://github.com/docomola/blueberry-theater/issues) 提交。
+本仓库**仅发布编译后的未签名安装包与说明文档**，不提供源代码、构建脚本、签名证书或 Profile。技术交流与问题反馈请通过 [Issues](https://github.com/docomola/blueberry-theater/issues) 提交。
 
 <p align="center"><sub>Built for HarmonyOS NEXT · 蓝莓剧场 © 2026</sub></p>
