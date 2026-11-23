@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Platform-HarmonyOS%20NEXT-34D399?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/API-24%20%286.1.1%29-34D399?style=flat-square" alt="API">
   <img src="https://img.shields.io/badge/ABI-arm64--v8a-34D399?style=flat-square" alt="ABI">
-  <img src="https://img.shields.io/badge/Version-1.0.0-1f2937?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.0.1-34D399?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/Source-Closed-1f2937?style=flat-square" alt="Source">
 </p>
 
@@ -25,7 +25,10 @@
 
 | 版本 | 安装包 | 大小 | 平台要求 | 下载 |
 | :--- | :--- | :--- | :--- | :--- |
-| **v1.0.0** | `blueberry-theater-1.0.0.hap` | 38.4 MB | HarmonyOS NEXT 6.1.1 (API 24) / arm64 | [前往 Releases 下载](https://github.com/docomola/blueberry-theater/releases/latest) |
+| **v1.0.1** ⭐ 最新 | `blueberry-theater-1.0.1.hap` | 40.4 MB | HarmonyOS NEXT 6.1.1 (API 24) / arm64 | [前往 Releases 下载](https://github.com/docomola/blueberry-theater/releases/latest) |
+| v1.0.0 | `blueberry-theater-1.0.0.hap` | 38.4 MB | HarmonyOS NEXT 6.1.1 (API 24) / arm64 | [历史版本](https://github.com/docomola/blueberry-theater/releases/tag/v1.0.0) |
+
+> ⚠️ **v1.0.0 的鸿果源在当前服务端环境下大概率取不到播放地址**（服务端自 2026-11-20 起变更了取址协议行为）。强烈建议直接安装 v1.0.1。
 
 ### 安装方式 A：hdc 命令行（推荐）
 
@@ -33,7 +36,7 @@
 # 1. 手机进入「设置 → 关于本机」连点版本号开启开发者模式
 # 2. 打开「开发者选项 → USB 调试」，连接电脑并在手机上允许调试
 hdc list targets                      # 确认设备已识别
-hdc install -r blueberry-theater-1.0.0.hap
+hdc install -r blueberry-theater-1.0.1.hap
 ```
 
 安装完成后桌面出现「蓝莓剧场」图标，首次启动需允许网络访问。
@@ -59,7 +62,9 @@ hdc install -r blueberry-theater-1.0.0.hap
 | **跨剧种题材** | 题材库为三套剧种题材表的并集（28 项），混排态下自动跳过「该剧种没有这个题材」的分支，不产生无效请求 |
 | **六维筛选** | `源 · 剧种 · 题材 · 设定 · 背景 · 受众 · 排序`，筛选行横向可滑，下拉面板按文字自适应宽度 |
 | **沉浸光感玻璃** | 基于官方 HDS 材质的悬浮底栏（滚动自动收起 / 展开）、玻璃顶栏与自绘玻璃下拉面板，深色底 + 亮边勾勒 |
-| **播放内核** | 接入 libmpv（`@mpv-ohos/mpv-arkts`）硬解播放，上滑切集、进度记忆、源级失败自动提示换源 |
+| **播放内核** | 接入 libmpv（`@mpv-ohos/mpv-arkts`）硬解播放；无 UI 起播、单击暂停 / 续播、双击全屏；控制行含上一集 / 下一集 / 倍速 / 横竖屏 / 全屏，方向支持自动跟随传感器 |
+| **刷剧页** | 满宽 16:9 竖屏刷剧流，右侧动作栏提供选集面板与一键清屏（隐去全部遮挡 UI）；暂停浮层可直接切集、调倍速、转横竖屏 |
+| **观看进度** | 记录每部剧看到第几集、第几秒，下次从断点续播；播放页与刷剧页共用同一份进度 |
 | **剧集详情** | 播放地址懒解析（针对 CMS 类片源），避免并发抓播放页触发风控 |
 | **收藏与记录** | 本地收藏列表、播放进度持久化，卸载前数据保留 |
 | **自建片源** | 设置页支持接入自建 CMS 片源服务器（可选，不影响内置源使用） |
@@ -87,6 +92,18 @@ hdc install -r blueberry-theater-1.0.0.hap
 ---
 
 ## 🗒️ 版本记录
+
+### v1.0.1 — 2026-11-23
+
+**取流稳定性修复 + 播放与刷剧页体验重做。**
+
+- **取流**：新增 `video_tab` 回退通道，解决服务端自 2026-11-20 起对匿名设备返回「HTTP 200 + 空正文」导致的无法播放；失败分类修正为「网络异常不换设备，仅空正文换身份」
+- **播放页**：默认无 UI 播放，起播 2.6 秒自动隐藏控制层；单击暂停 / 续播，双击全屏；控制行加入上一集、下一集、倍速、横竖屏；方向三态（自动 / 强制横屏 / 强制竖屏）；横屏画面精确居中
+- **刷剧页**：视频区满宽 16:9 并与顶栏留安全距；右侧动作栏改为收藏 / 剧集 / 清屏，清屏一键隐去全部遮挡 UI；暂停浮层加入上一集 / 下一集 / 倍速 / 横竖屏；移除热度信息，集数标签显示「全 N 集 · 第 M 集」
+- **观看进度记忆**（新）：记录看到第几集第几秒，下次从断点续播，播放页与刷剧页共用同一份进度
+- **性能**：滑动不再加载封面图；加载转圈延迟 1200 ms 才出现，连续滑动不再闪圈
+- **分类**：剧种「全部」混排改为三路并发 + 交错排序；题材库取三套剧种并集（28 项）
+- **其他**：源显示名「红果」调整为「鸿果」（仅显示名）；撤除弹幕功能
 
 ### v1.0.0 — 2026-11-21
 
